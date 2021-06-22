@@ -1,0 +1,39 @@
+# Maintainer: Otreblan <otreblain@gmail.com>
+
+pkgname=proyecto-2-git
+pkgver=0.2.0.r68.gd68cd82
+pkgrel=1
+pkgdesc="Inverse index"
+arch=('any')
+url=""
+license=('AGPL')
+depends=("python")
+makedepends=("python-setuptools")
+checkdepends=()
+optdepends=()
+provides=(${pkgname%-git})
+conflicts=(${pkgname%-git})
+_gitrepo=$(git rev-parse --show-toplevel)
+_headcommit=$(git rev-parse HEAD)
+source=("$pkgname::git+file://$_gitrepo#commit=$_headcommit")
+sha256sums=("SKIP")
+
+pkgver() {
+	cd "$srcdir/$pkgname"
+	( set -o pipefail
+	git describe --long 2>/dev/null | sed 's/^v-//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+	)
+}
+
+build() {
+	cd "$srcdir/$pkgname"
+
+	python setup.py build
+}
+
+package() {
+	cd "$srcdir/$pkgname"
+
+	python setup.py install --root="$pkgdir/" --optimize=1 --skip-build
+}
