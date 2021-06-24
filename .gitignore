@@ -58,7 +58,6 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
@@ -76,6 +75,13 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+#env
+/proyecto_2/env
+/proyecto_2/*.DS_Store
+/proyecto_2/*.pyc
+/proyecto_2/__pycache__
+
 
 # IPython
 profile_default/
