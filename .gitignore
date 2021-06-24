@@ -7,6 +7,8 @@ __pycache__/
 # C extensions
 *.so
 
+bdproject/db.sqlite3
+
 # Distribution / packaging
 .Python
 build/
@@ -111,6 +113,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
 
 # Spyder project settings
 .spyderproject
