@@ -16,7 +16,7 @@ def preprocess(text: str) -> Dict[str, int]:
     for token in word_tokenize(text):
         token = token.lower()
         if token not in stopwords:
-            words.append(token)
+            words.append(ss.stem(token))
 
     return dict(zip(words, [words.count(w) for w in words]))
 
