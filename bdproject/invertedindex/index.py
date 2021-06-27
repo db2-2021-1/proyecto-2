@@ -1,10 +1,12 @@
-from typing import List, Set, Dict
-from subprocess import Popen, PIPE
-from os import environ
-from nltk.stem import SnowballStemmer
+from io import BufferedReader, BufferedWriter
 from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+from os import environ
+from pickle import load, dump
 from string import punctuation
+from subprocess import Popen, PIPE
+from typing import List, Set, Dict
 
 import multiprocessing as mp
 
@@ -53,77 +55,90 @@ def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
             index.setdefault(word, {})[id] = frecuency
         n = n+1
 
-def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
-    environ["PREFIX"] = file_prefix
+class inverse_index(object):
+    """Inverse index"""
+    def __init__(self):
+        self.index: Dict[str, Dict[str, int]] = {}
 
-    printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
-    tweets = Popen('''
-        mkdir -p "$PREFIX"
+    def from_json(self, files: List[str]) -> None:
+        environ["PREFIX"] = file_prefix
 
-        function filter-json() {
-            jq -cr '.[] | "\\(.id)\\t\\(.text)"' "$@"
-        }
+        printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
+        tweets = Popen('''
+            mkdir -p "$PREFIX"
 
-        function write-tweets() {
-            awk \
-                -F'\\t' \\
-                -vprefix="$PREFIX" \\
-                '{
-                    gsub("\\r", " ", $2);
-                    printf "%s\\t%s\\n", $1, $2;
-                    print $2 > prefix"/"$1;
-                }'
-        }
+            function filter-json() {
+                jq -cr '.[] | "\\(.id)\\t\\(.text)"' "$@"
+            }
 
-        export -f filter-json
-        export -f write-tweets
+            function write-tweets() {
+                awk \
+                    -F'\\t' \\
+                    -vprefix="$PREFIX" \\
+                    '{
+                        gsub("\\r", " ", $2);
+                        printf "%s\\t%s\\n", $1, $2;
+                        print $2 > prefix"/"$1;
+                    }'
+            }
 
-        parallel -0 filter-json |\\
-            parallel --pipe --line-buffer write-tweets
-    ''', stdin = printf.stdout, stdout=PIPE, text=True, shell=True, executable="bash")
+            export -f filter-json
+            export -f write-tweets
 
-    index: Dict[str, Dict[str, int]] = {}
+            parallel -0 filter-json |\\
+                parallel --pipe --line-buffer write-tweets
+            ''',
+            stdin=printf.stdout,
+            stdout=PIPE,
+            text=True,
+            shell=True,
+            executable="bash"
+        )
 
-    if tweets.stdout != None:
-        j = 8
+        if tweets.stdout != None:
+            j = 8
 
-        pre_q = mp.Queue()
-        post_q = mp.Queue()
-        index_q = mp.Queue()
+            pre_q = mp.Queue()
+            post_q = mp.Queue()
+            index_q = mp.Queue()
 
-        pool = mp.Pool(j, preprocess, (pre_q, post_q,))
-        p = mp.Process(target=build_index, args=(post_q, index_q,))
+            pool = mp.Pool(j, preprocess, (pre_q, post_q,))
+            p = mp.Process(target=build_index, args=(post_q, index_q,))
 
-        p.start()
-        for line in tweets.stdout:
-            id, text = line[:-1].split('\t')
+            p.start()
+            for line in tweets.stdout:
+                id, text = line[:-1].split('\t')
 
-            pre_q.put((id, text))
+                pre_q.put((id, text))
 
-        for _ in range(j):
-            pre_q.put(None)
+            for _ in range(j):
+                pre_q.put(None)
 
-        pre_q.close()
-        pre_q.join_thread()
+            pre_q.close()
+            pre_q.join_thread()
 
-        pool.close()
-        pool.join()
+            pool.close()
+            pool.join()
 
-        post_q.put(None)
-        post_q.close()
+            post_q.put(None)
+            post_q.close()
 
-        index = index_q.get()
-        print()
+            self.index = index_q.get()
+            print()
 
-    return index
+    def query(self, text:str) -> List[str]:
+        result: List[str] = []
 
-def query(text:str, index: Dict[str, Dict[str, int]]) -> List[str]:
-    result: List[str] = []
+        q = preprocess_text(text)
 
-    q = preprocess_text(text)
+        # TODO Cos()
+        for word in q:
+            result.extend([pair[0] for pair in self.index[word].items()])
 
-    # TODO Cos()
-    for word in q:
-        result.extend([pair[0] for pair in index[word].items()])
+        return result
 
-    return result
+    def load(self, r: BufferedReader) -> None:
+        self.index = load(r)
+
+    def dump(self, w: BufferedWriter) -> None:
+        dump(self.index, w)
