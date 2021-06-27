@@ -112,8 +112,18 @@ def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
         post_q.put(None)
         post_q.close()
 
-        #print()
-
         index = index_q.get()
+        print()
 
     return index
+
+def query(text:str, index: Dict[str, Dict[str, int]]) -> List[str]:
+    result: List[str] = []
+
+    q = preprocess_text(text)
+
+    # TODO Cos()
+    for word in q:
+        result.extend([pair[0] for pair in index[word].items()])
+
+    return result
