@@ -17,13 +17,13 @@ setuptools.setup(
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)', # noqa
     ],
     install_requires=[
-        'Django',
-        'json-stream'
+        'Django'
     ],
     entry_points={
         "console_scripts": [
             "proyecto-2 = bdproject.manage:main",
         ],
     },
+    scripts=['bdproject/invertedindex/index.sh'],
     python_requires='>=3.3',
 )

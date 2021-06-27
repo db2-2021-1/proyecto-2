@@ -4,7 +4,7 @@
 
 ### Python
 - `Django`
-- `json-stream`
 
 ### Linux
+- `awk`
 - `parallel`
