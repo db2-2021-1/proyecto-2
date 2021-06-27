@@ -52,7 +52,7 @@ def index_json(files: List[str]) -> None:
     if tweets.stdout != None:
         n = 0
         for line in tweets.stdout:
-            id, text = line[:-1].split('\t')
-            print(f"Tweet #{n} {id} {len(preprocess(text))}\r", end="")
+            path, text = line[:-1].split('\t')
+            print(f"Tweet #{n} {path} {len(preprocess(text))}\r", end="")
             n = n+1
         print()
