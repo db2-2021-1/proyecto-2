@@ -1,6 +1,6 @@
 from typing import List, Set, Dict
 from subprocess import Popen, PIPE
-from os import environ
+from os import environ, path
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -20,7 +20,7 @@ def preprocess(text: str) -> Dict[str, int]:
 
     return dict(zip(words, [words.count(w) for w in words]))
 
-def index_json(files: List[str]) -> None:
+def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
     environ["PREFIX"] = file_prefix
 
     printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
@@ -49,10 +49,17 @@ def index_json(files: List[str]) -> None:
             parallel --pipe --line-buffer write-tweets
     ''', stdin = printf.stdout, stdout=PIPE, text=True, shell=True, executable="bash")
 
+    index: Dict[str, Dict[str, int]] = {}
+
     if tweets.stdout != None:
         n = 0
         for line in tweets.stdout:
             path, text = line[:-1].split('\t')
-            print(f"Tweet #{n} {path} {len(preprocess(text))}\r", end="")
+
+            print(f"Tweet #{n} {path}\r", end="")
+            index[path.split('/')[-1]] = preprocess(text)
+
             n = n+1
         print()
+
+    return index
