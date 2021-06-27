@@ -7,4 +7,5 @@ from sys import argv
 if __name__ == '__main__':
     index = inverse_index()
     with open("index", "wb") as w:
-        dump(index.from_json(argv[1:]), w)
+        index.from_json(argv[1:])
+    index.dump()

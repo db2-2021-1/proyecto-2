@@ -6,7 +6,7 @@ from os import environ
 from pickle import load, dump
 from string import punctuation
 from subprocess import Popen, PIPE
-from typing import List, Set, Dict
+from typing import List, Set, Dict, overload
 
 import multiprocessing as mp
 
@@ -132,13 +132,39 @@ class inverse_index(object):
         q = preprocess_text(text)
 
         # TODO Cos()
-        for word in q:
-            result.extend([pair[0] for pair in self.index[word].items()])
+        print(self.index)
 
         return result
 
-    def load(self, r: BufferedReader) -> None:
-        self.index = load(r)
+    @overload
+    def load(self, file: BufferedReader) -> None: ...
 
-    def dump(self, w: BufferedWriter) -> None:
-        dump(self.index, w)
+    @overload
+    def load(self, file: str) -> None: ...
+
+    def load(self, file = None) -> None:
+        if file is None:
+            file = "index"
+
+        if isinstance(file, str):
+            with open(file, "rb") as r:
+                self.load(r)
+        elif isinstance(file, BufferedReader):
+            self.index = load(file)
+
+
+    @overload
+    def dump(self, file: BufferedWriter) -> None: ...
+
+    @overload
+    def dump(self, file: str) -> None: ...
+
+    def dump(self, file = None) -> None:
+        if file is None:
+            file = "index"
+
+        if isinstance(file, str):
+            with open(file, "wb") as w:
+                self.dump(w)
+        elif isinstance(file, BufferedWriter):
+            dump(self.index, file)

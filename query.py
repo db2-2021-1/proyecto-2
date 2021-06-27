@@ -6,8 +6,7 @@ from sys import argv
 if __name__ == '__main__':
     index = inverse_index()
 
-    with open("index", "rb") as r:
-        index.load(r)
+    index.load("index")
 
     for text in argv[1:]:
         print(index.query(text))
