@@ -1,8 +1,24 @@
-from typing import List
+from typing import List, Set
 from subprocess import Popen, PIPE
 from os import environ
+from nltk.stem import SnowballStemmer
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from string import punctuation
 
 file_prefix= "data"
+ss = SnowballStemmer("spanish")
+stopwords: Set[str] = set(stopwords.words("spanish") + list(punctuation))
+
+def preprocess(text: str) -> List[str]:
+    words: List[str] = []
+
+    for token in word_tokenize(text):
+        token = token.lower()
+        if token not in stopwords:
+            words.append(token)
+
+    return words
 
 def index_json(files: List[str]) -> None:
     environ["PREFIX"] = file_prefix
@@ -19,19 +35,24 @@ def index_json(files: List[str]) -> None:
             awk \
                 -F'\\t' \\
                 -vprefix="$PREFIX" \\
-                '{printf "%s/%s\\n", prefix, $1; print $2 > prefix"/"$1}'
+                '{
+                    gsub("\\r", " ", $2);
+                    printf "%s/%s\\t%s\\n", prefix, $1, $2;
+                    print $2 > prefix"/"$1;
+                }'
         }
 
         export -f filter-json
         export -f write-tweets
 
         parallel -0 filter-json |\\
-            parallel --pipe write-tweets
+            parallel --pipe --line-buffer write-tweets
     ''', stdin = printf.stdout, stdout=PIPE, text=True, shell=True, executable="bash")
 
     if tweets.stdout != None:
         n = 0
-        for path in tweets.stdout:
-            print(f"Tweet #{n} {path[:-1]}\r", end="")
+        for line in tweets.stdout:
+            id, text = line[:-1].split('\t')
+            print(f"Tweet #{n} {id} {len(preprocess(text))}\r", end="")
             n = n+1
         print()
