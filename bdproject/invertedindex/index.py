@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Set, Dict
 from subprocess import Popen, PIPE
 from os import environ
 from nltk.stem import SnowballStemmer
@@ -10,7 +10,7 @@ file_prefix= "data"
 ss = SnowballStemmer("spanish")
 stopwords: Set[str] = set(stopwords.words("spanish") + list(punctuation))
 
-def preprocess(text: str) -> List[str]:
+def preprocess(text: str) -> Dict[str, int]:
     words: List[str] = []
 
     for token in word_tokenize(text):
@@ -18,7 +18,7 @@ def preprocess(text: str) -> List[str]:
         if token not in stopwords:
             words.append(token)
 
-    return words
+    return dict(zip(words, [words.count(w) for w in words]))
 
 def index_json(files: List[str]) -> None:
     environ["PREFIX"] = file_prefix
