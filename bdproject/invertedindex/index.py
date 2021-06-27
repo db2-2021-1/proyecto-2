@@ -1,41 +1,37 @@
-import json_stream
-
 from typing import List
-from os.path import join
 from subprocess import Popen, PIPE
-from pathlib import Path
+from os import environ
 
 file_prefix= "data"
 
-def tweet2file(id: int, text: str) -> str:
-    file_path = join(file_prefix, str(id))
-
-    with open(file_path, "w") as w:
-        w.write(text)
-
-    return file_path
-
-
 def index_json(files: List[str]) -> None:
-    Path(file_prefix).mkdir(parents=True, exist_ok=True)
+    environ["PREFIX"] = file_prefix
 
-    args = Popen(["printf", "%s\\0"] + files, stdin=PIPE, stdout=PIPE)
-    jq = Popen(["parallel", "-0", "jq '.[] | {id, text}'"], stdin=args.stdout, stdout=PIPE, text=True)
+    printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
+    tweets = Popen('''
+        mkdir -p "$PREFIX"
 
-    if args.stdout != None:
-        args.stdout.close()
+        function filter-json() {
+            jq -cr '.[] | "\\(.id)\\t\\(.text)"' "$@"
+        }
 
-    tweets = 0
-    try:
-        while True:
-            data = json_stream.load(jq.stdout)
-            tweet2file(data["id"], data["text"])
+        function write-tweets() {
+            awk \
+                -F'\\t' \\
+                -vprefix="$PREFIX" \\
+                '{printf "%s/%s\\n", prefix, $1; print $2 > prefix"/"$1}'
+        }
 
-            print(f"Tweets: {tweets}\r", end='')
-            tweets = tweets + 1
-            data.read_all()
+        export -f filter-json
+        export -f write-tweets
 
+        parallel -0 filter-json |\\
+            parallel --pipe write-tweets
+    ''', stdin = printf.stdout, stdout=PIPE, text=True, shell=True, executable="bash")
 
-    except StopIteration:
+    if tweets.stdout != None:
+        n = 0
+        for path in tweets.stdout:
+            print(f"Tweet #{n} {path[:-1]}\r", end="")
+            n = n+1
         print()
-

@@ -1,7 +1,7 @@
 # Maintainer: Otreblan <otreblain@gmail.com>
 
 pkgname=proyecto-2-git
-pkgver=r4.626f7ab
+pkgver=r10.bc4aa00
 pkgrel=1
 pkgdesc="Inverse index"
 arch=('any')
