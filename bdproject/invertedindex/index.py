@@ -37,7 +37,7 @@ def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
                 -vprefix="$PREFIX" \\
                 '{
                     gsub("\\r", " ", $2);
-                    printf "%s/%s\\t%s\\n", prefix, $1, $2;
+                    printf "%s\\t%s\\n", $1, $2;
                     print $2 > prefix"/"$1;
                 }'
         }
@@ -54,10 +54,12 @@ def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
     if tweets.stdout != None:
         n = 0
         for line in tweets.stdout:
-            path, text = line[:-1].split('\t')
+            id, text = line[:-1].split('\t')
 
-            print(f"Tweet #{n} {path}\r", end="")
-            index[path.split('/')[-1]] = preprocess(text)
+            print(f"Tweet #{n} {id}\r", end="")
+
+            for word, frecuency in preprocess(text).items():
+                index.setdefault(word, {})[id] = frecuency
 
             n = n+1
         print()
