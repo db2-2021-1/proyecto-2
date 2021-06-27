@@ -17,7 +17,8 @@ setuptools.setup(
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)', # noqa
     ],
     install_requires=[
-        'Django'
+        'Django',
+        'json-stream'
     ],
     entry_points={
         "console_scripts": [
