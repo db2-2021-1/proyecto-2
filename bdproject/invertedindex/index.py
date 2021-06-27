@@ -1,16 +1,18 @@
 from typing import List, Set, Dict
 from subprocess import Popen, PIPE
-from os import environ, path
+from os import environ
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from string import punctuation
 
+import multiprocessing as mp
+
 file_prefix= "data"
 ss = SnowballStemmer("spanish")
 stopwords: Set[str] = set(stopwords.words("spanish") + list(punctuation))
 
-def preprocess(text: str) -> Dict[str, int]:
+def preprocess_text(text: str) -> Dict[str, int]:
     words: List[str] = []
 
     for token in word_tokenize(text):
@@ -19,6 +21,37 @@ def preprocess(text: str) -> Dict[str, int]:
             words.append(ss.stem(token))
 
     return dict(zip(words, [words.count(w) for w in words]))
+
+def preprocess(pre_q: mp.Queue, post_q: mp.Queue) -> None:
+    while True:
+        item = pre_q.get(block=True)
+        if item is None:
+            break
+
+        id: str
+        text: str
+
+        id, text = item
+        post_q.put((id, preprocess_text(text)))
+
+
+def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
+    index: Dict[str, Dict[str, int]] = {}
+    n = 0
+    while True:
+        item = q.get(block=True)
+        if item is None:
+            index_q.put(index)
+            break
+
+        id: str
+        p: Dict[str, int]
+
+        id, p = item
+        print(f"Tweet #{n} {id} {len(p)}\r", end="")
+        for word, frecuency in p.items():
+            index.setdefault(word, {})[id] = frecuency
+        n = n+1
 
 def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
     environ["PREFIX"] = file_prefix
@@ -52,16 +85,35 @@ def index_json(files: List[str]) -> Dict[str, Dict[str, int]]:
     index: Dict[str, Dict[str, int]] = {}
 
     if tweets.stdout != None:
-        n = 0
+        j = 8
+
+        pre_q = mp.Queue()
+        post_q = mp.Queue()
+        index_q = mp.Queue()
+
+        pool = mp.Pool(j, preprocess, (pre_q, post_q,))
+        p = mp.Process(target=build_index, args=(post_q, index_q,))
+
+        p.start()
         for line in tweets.stdout:
             id, text = line[:-1].split('\t')
 
-            print(f"Tweet #{n} {id}\r", end="")
+            pre_q.put((id, text))
 
-            for word, frecuency in preprocess(text).items():
-                index.setdefault(word, {})[id] = frecuency
+        for _ in range(j):
+            pre_q.put(None)
 
-            n = n+1
-        print()
+        pre_q.close()
+        pre_q.join_thread()
+
+        pool.close()
+        pool.join()
+
+        post_q.put(None)
+        post_q.close()
+
+        #print()
+
+        index = index_q.get()
 
     return index
