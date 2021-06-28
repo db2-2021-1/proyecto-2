@@ -137,26 +137,25 @@ class inverse_index(object):
 
     def query(self, text:str) -> List[str]:
         result: List[str] = []
-        seen: set[str] = set()
 
         q = preprocess_text(text)
         q_norm = sqrt(sum([f**2 for _, f in q.items()]))
 
+        # Dict[word, frecuency]
         df: Dict[str, int] = {}
+
+        # Dict[document, Dict[word, frecuency]]
+        tf: Dict[str, Dict[str, int]] = {}
 
         # TODO Cos() tf.idf
         for word in q:
             pairs = self.index.get(word)
             if pairs:
-                for id in pairs:
+                for id, f in pairs.items():
 
-                    if id not in df:
-                        df[id] = 0
-                    df[id] += 1
-
-                    if id not in seen:
-                        seen.add(id)
-                        result.append(id)
+                    if word not in df:
+                        df[word] = 0
+                    df[word] += 1
 
         idf: Dict[str, float] = {
             d: log10(float(self.N)/f) for d, f in df.items()
