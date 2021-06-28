@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
 from os import environ
+from os.path import join
 from pickle import load, dump
 from string import punctuation
 from subprocess import Popen, PIPE
@@ -147,8 +148,15 @@ class inverse_index(object):
             self.index, self.norms, self.N = index_q.get()
             print()
 
-    def cos(self) -> float:
-        return 0.0
+    def cos(self,
+        Q: Dict[str, float],
+        q_n: float,
+        V: Dict[str, float],
+        v_n: float) -> float:
+
+        return (sum([
+            weigth*V[word] for word, weigth in Q.items()
+        ]))/(q_n*v_n)
 
     def df(self, word: str) -> int:
         return len(self.index[word])
@@ -156,9 +164,7 @@ class inverse_index(object):
     def idf(self, word: str) -> float:
         return log10(float(self.N)/self.df(word))
 
-    def query(self, text:str) -> List[str]:
-        result: List[str] = []
-
+    def query(self, text:str) -> Dict[str, float]:
         # Dict[word, frecuency]
         q: Dict[str, int] = preprocess_text(text)
 
@@ -192,10 +198,17 @@ class inverse_index(object):
 
         # Dict[document, cos]
         cos_ranked: Dict[str, float] = {
-            d: self.cos() for d, v in tf_idf.items()
+            d: self.cos(q_tf_idf, q_norm, v, self.norms[d])
+            for d, v in tf_idf.items()
         }
 
-        return result
+
+        return dict(
+            sorted(
+                cos_ranked.items(),
+                key=lambda item: item[1], reverse=True
+            )
+        )
 
     @overload
     def load(self, file: BufferedReader) -> None: ...
