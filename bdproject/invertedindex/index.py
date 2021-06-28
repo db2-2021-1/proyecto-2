@@ -1,4 +1,5 @@
 from io import BufferedReader, BufferedWriter
+from math import sqrt
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
@@ -39,11 +40,12 @@ def preprocess(pre_q: mp.Queue, post_q: mp.Queue) -> None:
 
 def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
     index: Dict[str, Dict[str, int]] = {}
+    norms: Dict[str, float] = {}
     n = 0
     while True:
         item = q.get(block=True)
         if item is None:
-            index_q.put(index)
+            index_q.put((index, norms))
             break
 
         id: str
@@ -51,14 +53,20 @@ def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
 
         id, p = item
         print(f"Tweet #{n} {id} {len(p)}\r", end="")
+
+        norm = 0.0
         for word, frecuency in p.items():
             index.setdefault(word, {})[id] = frecuency
+            norm = norm + frecuency**2
+
+        norms[id] = sqrt(norm)
         n = n+1
 
 class inverse_index(object):
     """Inverse index"""
     def __init__(self):
         self.index: Dict[str, Dict[str, int]] = {}
+        self.norms: Dict[str, float] = {}
 
     def from_json(self, files: List[str]) -> None:
         environ["PREFIX"] = file_prefix
@@ -123,7 +131,7 @@ class inverse_index(object):
             post_q.put(None)
             post_q.close()
 
-            self.index = index_q.get()
+            self.index, self.norms = index_q.get()
             print()
 
     def query(self, text:str) -> List[str]:
@@ -157,7 +165,7 @@ class inverse_index(object):
             with open(file, "rb") as r:
                 self.load(r)
         elif isinstance(file, BufferedReader):
-            self.index = load(file)
+            self.index, self.norms = load(file)
 
 
     @overload
@@ -174,4 +182,4 @@ class inverse_index(object):
             with open(file, "wb") as w:
                 self.dump(w)
         elif isinstance(file, BufferedWriter):
-            dump(self.index, file)
+            dump((self.index, self.norms), file)
