@@ -128,11 +128,18 @@ class inverse_index(object):
 
     def query(self, text:str) -> List[str]:
         result: List[str] = []
+        seen: set[str] = set()
 
         q = preprocess_text(text)
 
-        # TODO Cos()
-        print(self.index)
+        # TODO Cos() tf.idf
+        for word in q:
+            pairs = self.index.get(word)
+            if pairs:
+                for id in pairs:
+                    if id not in seen:
+                        seen.add(id)
+                        result.append(id)
 
         return result
 
@@ -141,6 +148,9 @@ class inverse_index(object):
 
     @overload
     def load(self, file: str) -> None: ...
+
+    @overload
+    def load(self) -> None: ...
 
     def load(self, file = None) -> None:
         if file is None:
@@ -158,6 +168,9 @@ class inverse_index(object):
 
     @overload
     def dump(self, file: str) -> None: ...
+
+    @overload
+    def dump(self) -> None: ...
 
     def dump(self, file = None) -> None:
         if file is None:

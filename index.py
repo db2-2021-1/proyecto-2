@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from pickle import dump
 from bdproject.invertedindex.index import inverse_index
 from sys import argv
 
