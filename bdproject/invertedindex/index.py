@@ -135,6 +135,9 @@ class inverse_index(object):
             self.index, self.norms, self.N = index_q.get()
             print()
 
+    def cos(self) -> float:
+        return 0.0
+
     def query(self, text:str) -> List[str]:
         result: List[str] = []
 
@@ -180,7 +183,10 @@ class inverse_index(object):
             } for d, fs in tf.items()
         }
 
-        print(tf_idf)
+        # Dict[document, cos]
+        cos_ranked: Dict[str, float] = {
+            d: self.cos() for d, v in tf_idf
+        }
 
         return result
 
