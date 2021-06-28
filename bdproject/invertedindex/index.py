@@ -42,9 +42,6 @@ def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
     # Dict[word, Dict[Document, frecuency]]
     index: Dict[str, Dict[str, int]] = {}
 
-    # Dict[word, d_frecuency]
-    df: Dict[str, int] = {}
-
     # Dict[document, Dict[word, frecuency]]
     tf: Dict[str, Dict[str, int]] = {}
 
@@ -164,7 +161,6 @@ class inverse_index(object):
 
         # Dict[word, frecuency]
         q: Dict[str, int] = preprocess_text(text)
-        q_norm = sqrt(sum([f**2 for _, f in q.items()]))
 
         # Dict[document, Dict[word, frecuency]]
         tf: Dict[str, Dict[str, int]] = {}
@@ -182,8 +178,10 @@ class inverse_index(object):
 
         # Dict[word, tf_idf]
         q_tf_idf: Dict[str, float] = {
-            w: log10(1.0+f)*self.idf(w) for w, f in q.items()
+            w: log10(1.0+f)*self.idf(w) for w, f in q.items() if w in union
         }
+
+        q_norm = sqrt(sum([tf_idf**2 for _, tf_idf in q_tf_idf.items()]))
 
         # Dict[document, Dict[word, tf_idf]]
         tf_idf: Dict[str, Dict[str, float]] = {
