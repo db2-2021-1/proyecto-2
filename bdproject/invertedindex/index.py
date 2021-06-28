@@ -140,6 +140,7 @@ class inverse_index(object):
         seen: set[str] = set()
 
         q = preprocess_text(text)
+        q_norm = sqrt(sum([f**2 for _, f in q.items()]))
 
         df: Dict[str, int] = {}
 
