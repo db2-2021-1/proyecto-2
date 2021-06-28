@@ -1,5 +1,5 @@
 from io import BufferedReader, BufferedWriter
-from math import sqrt
+from math import sqrt, log10
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
@@ -156,6 +156,10 @@ class inverse_index(object):
                     if id not in seen:
                         seen.add(id)
                         result.append(id)
+
+        idf: Dict[str, float] = {
+            d: log10(float(self.N)/f) for d, f in df.items()
+        }
 
         return result
 
