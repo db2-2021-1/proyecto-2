@@ -141,11 +141,18 @@ class inverse_index(object):
 
         q = preprocess_text(text)
 
+        df: Dict[str, int] = {}
+
         # TODO Cos() tf.idf
         for word in q:
             pairs = self.index.get(word)
             if pairs:
                 for id in pairs:
+
+                    if id not in df:
+                        df[id] = 0
+                    df[id] += 1
+
                     if id not in seen:
                         seen.add(id)
                         result.append(id)
