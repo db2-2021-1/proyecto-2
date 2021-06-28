@@ -39,12 +39,29 @@ def preprocess(pre_q: mp.Queue, post_q: mp.Queue) -> None:
 
 
 def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
+    # Dict[word, Dict[Document, frecuency]]
     index: Dict[str, Dict[str, int]] = {}
+
+    # Dict[word, d_frecuency]
+    df: Dict[str, int] = {}
+
+    # Dict[document, Dict[word, frecuency]]
+    tf: Dict[str, Dict[str, int]] = {}
+
+    # Dict[document, tf_idf_length]
     norms: Dict[str, float] = {}
+
     n = 0
     while True:
         item = q.get(block=True)
         if item is None:
+            norms = {
+                id: sqrt(sum([
+                    (log10(1.0+f) * log10(float(n)/len(index[w])))**2
+                    for w, f in fs.items()
+                ]))
+                for id, fs in tf.items()
+            }
             index_q.put((index, norms, n))
             break
 
@@ -54,12 +71,10 @@ def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
         id, p = item
         print(f"Tweet #{n} {id} {len(p)}\r", end="")
 
-        norm = 0.0
+        tf[id] = p
         for word, frecuency in p.items():
             index.setdefault(word, {})[id] = frecuency
-            norm = norm + frecuency**2
 
-        norms[id] = sqrt(norm)
         n = n+1
 
 class inverse_index(object):
@@ -138,15 +153,18 @@ class inverse_index(object):
     def cos(self) -> float:
         return 0.0
 
+    def df(self, word: str) -> int:
+        return len(self.index[word])
+
+    def idf(self, word: str) -> float:
+        return log10(float(self.N)/self.df(word))
+
     def query(self, text:str) -> List[str]:
         result: List[str] = []
 
         # Dict[word, frecuency]
         q: Dict[str, int] = preprocess_text(text)
         q_norm = sqrt(sum([f**2 for _, f in q.items()]))
-
-        # Dict[word, d_frecuency]
-        df: Dict[str, int] = {}
 
         # Dict[document, Dict[word, frecuency]]
         tf: Dict[str, Dict[str, int]] = {}
@@ -162,30 +180,21 @@ class inverse_index(object):
                 for id, f in pairs.items():
                     tf.setdefault(id, {})[word] = f
 
-                    if word not in df:
-                        df[word] = 0
-                    df[word] += 1
-
-        # Dict[word, idf]
-        idf: Dict[str, float] = {
-            d: log10(float(self.N)/f) for d, f in df.items()
-        }
-
         # Dict[word, tf_idf]
         q_tf_idf: Dict[str, float] = {
-            w: log10(1.0+f)*idf[w] for w, f in q.items()
+            w: log10(1.0+f)*self.idf(w) for w, f in q.items()
         }
 
         # Dict[document, Dict[word, tf_idf]]
         tf_idf: Dict[str, Dict[str, float]] = {
             d: {
-                w: log10(1.0+f)*idf[w] for w, f in fs.items()
+                w: log10(1.0+f)*self.idf(w) for w, f in fs.items()
             } for d, fs in tf.items()
         }
 
         # Dict[document, cos]
         cos_ranked: Dict[str, float] = {
-            d: self.cos() for d, v in tf_idf
+            d: self.cos() for d, v in tf_idf.items()
         }
 
         return result
