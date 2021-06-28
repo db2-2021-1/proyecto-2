@@ -163,8 +163,16 @@ class inverse_index(object):
                         df[word] = 0
                     df[word] += 1
 
+        # Dict[word, idf]
         idf: Dict[str, float] = {
             d: log10(float(self.N)/f) for d, f in df.items()
+        }
+
+        # Dict[document, Dict[word, tf_idf]]
+        tf_idf: Dict[str, Dict[str, float]] = {
+            d: {
+                w: log10(1.0+f)*idf[w] for w, f in fs.items()
+            } for d, fs in tf.items()
         }
 
         return result
