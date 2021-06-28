@@ -45,7 +45,7 @@ def build_index(q: mp.Queue, index_q: mp.Queue) -> None:
     while True:
         item = q.get(block=True)
         if item is None:
-            index_q.put((index, norms))
+            index_q.put((index, norms, n))
             break
 
         id: str
@@ -67,6 +67,7 @@ class inverse_index(object):
     def __init__(self):
         self.index: Dict[str, Dict[str, int]] = {}
         self.norms: Dict[str, float] = {}
+        self.N: int = 0
 
     def from_json(self, files: List[str]) -> None:
         environ["PREFIX"] = file_prefix
@@ -131,7 +132,7 @@ class inverse_index(object):
             post_q.put(None)
             post_q.close()
 
-            self.index, self.norms = index_q.get()
+            self.index, self.norms, self.N = index_q.get()
             print()
 
     def query(self, text:str) -> List[str]:
@@ -165,7 +166,7 @@ class inverse_index(object):
             with open(file, "rb") as r:
                 self.load(r)
         elif isinstance(file, BufferedReader):
-            self.index, self.norms = load(file)
+            self.index, self.norms, self.N = load(file)
 
 
     @overload
@@ -182,4 +183,4 @@ class inverse_index(object):
             with open(file, "wb") as w:
                 self.dump(w)
         elif isinstance(file, BufferedWriter):
-            dump((self.index, self.norms), file)
+            dump((self.index, self.norms, self.N), file)
