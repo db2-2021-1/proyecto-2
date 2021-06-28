@@ -152,10 +152,7 @@ class inverse_index(object):
     @overload
     def load(self) -> None: ...
 
-    def load(self, file = None) -> None:
-        if file is None:
-            file = "index"
-
+    def load(self, file = "index") -> None:
         if isinstance(file, str):
             with open(file, "rb") as r:
                 self.load(r)
@@ -172,10 +169,7 @@ class inverse_index(object):
     @overload
     def dump(self) -> None: ...
 
-    def dump(self, file = None) -> None:
-        if file is None:
-            file = "index"
-
+    def dump(self, file = "index") -> None:
         if isinstance(file, str):
             with open(file, "wb") as w:
                 self.dump(w)
