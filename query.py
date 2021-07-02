@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from bdproject.invertedindex.index import inverse_index
+from bdproject.invertedindex.index import inverse_index, file_prefix
+from os.path import join
 from sys import argv
 
 if __name__ == '__main__':
@@ -9,4 +10,5 @@ if __name__ == '__main__':
     index.load()
 
     for text in argv[1:]:
-        print(index.query(text))
+        for id in index.query(text):
+            print(join(file_prefix, id))
