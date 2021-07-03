@@ -3,6 +3,7 @@ from math import sqrt, log10
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+
 from os import environ
 from os.path import join
 from pickle import load, dump
@@ -84,6 +85,7 @@ class inverse_index(object):
 
     def from_json(self, files: List[str]) -> None:
         environ["PREFIX"] = file_prefix
+        
 
         printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
         tweets = Popen('''

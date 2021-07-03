@@ -25,4 +25,5 @@ urlpatterns = [
     path('',  views.mainpage, name="mainpage"),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('images/logos/inverted.jpg'))),
     path('dashboard',views.dashboard, name="dashboard"),
+    path('requestinvertedindex',views.invertedindexquery, name="invertedindexquery")
 ]
