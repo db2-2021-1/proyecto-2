@@ -4,7 +4,4 @@
 
 ### Python
 - `Django`
-
-### Linux
-- `awk`
-- `parallel`
+- `nltk`

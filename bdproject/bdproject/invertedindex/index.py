@@ -3,17 +3,15 @@ from math import sqrt, log10
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+import json
 
 from os import environ
-from os.path import join
 from pickle import load, dump
 from string import punctuation
-from subprocess import Popen, PIPE
 from typing import List, Set, Dict, overload
 
 import multiprocessing as mp
 
-file_prefix= "data"
 ss = SnowballStemmer("spanish")
 stopwords: Set[str] = set(stopwords.words("spanish") + list(punctuation))
 
@@ -84,71 +82,37 @@ class inverse_index(object):
         self.N: int = 0
 
     def from_json(self, files: List[str]) -> None:
-        environ["PREFIX"] = file_prefix
-        
+        j = 8
 
-        printf = Popen(["printf", "%s\\0"]+files, stdout=PIPE)
-        tweets = Popen('''
-            mkdir -p "$PREFIX"
+        pre_q = mp.Queue()
+        post_q = mp.Queue()
+        index_q = mp.Queue()
 
-            function filter-json() {
-                jq -cr '.[] | "\\(.id)\\t\\(.text)"' "$@"
-            }
+        pool = mp.Pool(j, preprocess, (pre_q, post_q,))
+        p = mp.Process(target=build_index, args=(post_q, index_q,))
 
-            function write-tweets() {
-                awk \
-                    -F'\\t' \\
-                    -vprefix="$PREFIX" \\
-                    '{
-                        gsub("\\r", " ", $2);
-                        printf "%s\\t%s\\n", $1, $2;
-                        print $2 > prefix"/"$1;
-                    }'
-            }
+        p.start()
 
-            export -f filter-json
-            export -f write-tweets
+        for file in files:
+            with open(file, "r") as r:
+                tweets = json.load(r)
+                for tweet in tweets:
+                    pre_q.put((tweet["id"], tweet["text"]))
 
-            parallel -0 filter-json |\\
-                parallel --pipe --line-buffer write-tweets
-            ''',
-            stdin=printf.stdout,
-            stdout=PIPE,
-            text=True,
-            shell=True,
-            executable="bash"
-        )
+        for _ in range(j):
+            pre_q.put(None)
 
-        if tweets.stdout != None:
-            j = 8
+        pre_q.close()
+        pre_q.join_thread()
 
-            pre_q = mp.Queue()
-            post_q = mp.Queue()
-            index_q = mp.Queue()
+        pool.close()
+        pool.join()
 
-            pool = mp.Pool(j, preprocess, (pre_q, post_q,))
-            p = mp.Process(target=build_index, args=(post_q, index_q,))
+        post_q.put(None)
+        post_q.close()
 
-            p.start()
-            for line in tweets.stdout:
-                id, text = line[:-1].split('\t')
-
-                pre_q.put((id, text))
-
-            for _ in range(j):
-                pre_q.put(None)
-
-            pre_q.close()
-            pre_q.join_thread()
-
-            pool.close()
-            pool.join()
-
-            post_q.put(None)
-            post_q.close()
-
-            self.index, self.norms, self.N = index_q.get()
-            print()
+        self.index, self.norms, self.N = index_q.get()
+        print()
 
     def cos(self,
         Q: Dict[str, float],
@@ -175,7 +139,6 @@ class inverse_index(object):
 
         union: Set[str] = set()
 
-        # TODO Cos() tf.idf
         for word in q:
             pairs = self.index.get(word)
             if pairs:
@@ -183,8 +146,6 @@ class inverse_index(object):
 
                 for id, f in pairs.items():
                     tf.setdefault(id, {})[word] = f
-
-        #print(union)
 
         # Dict[word, tf_idf]
         q_tf_idf: Dict[str, float] = {
@@ -199,8 +160,6 @@ class inverse_index(object):
                 w: log10(1.0+f)*self.idf(w) for w, f in fs.items()
             } for d, fs in tf.items()
         }
-
-        print(set([w for d,v in tf_idf.items() for w in v]))
 
         # Dict[document, cos]
         cos_ranked: Dict[str, float] = {
