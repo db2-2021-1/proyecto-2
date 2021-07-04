@@ -19,12 +19,10 @@
             //console.log('results', results)
             //console.log("data", data)
             var datos = JSON.parse(data)
-	        let i = 0  
+	          
               for (tweet of datos) {
                 console.log(tweet);
-   		    if(i == 3) break
-		      i++
-		      twttr.widgets.createTweet(tweet, results, 
+   		twttr.widgets.createTweet(tweet, results, 
                   {
                     conversation : 'none',
                     cards        : 'hidden',

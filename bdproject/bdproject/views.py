@@ -28,8 +28,14 @@ def invertedindexquery(request):
   data = json.loads(request.body)
   retorno = []
   text = data['query']
-  #for id in index.query(text):
-  #  retorno.append(id)
-  #print(retorno)
-  retorno = ['1411528338850652163', '1411701470530093057', '1411701377747857409']
+  i = 0
+  for id in index.query(text):
+    retorno.append(str(id))
+    if i == 5:
+        break
+    i = i + 1
+  print(retorno)
+  #retorno = ['1411528338850652163', '1411701470530093057', '1411701377747857409']
+  
+
   return JsonResponse(json.dumps(retorno) , safe=False)
