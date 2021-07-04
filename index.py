@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from bdproject.invertedindex.index import inverse_index
+from bdproject.bdproject.invertedindex.index import inverse_index
 from sys import argv
 
 if __name__ == '__main__':
