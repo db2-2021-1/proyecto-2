@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from bdproject.invertedindex.index import inverse_index, file_prefix
+from bdproject.bdproject.invertedindex.index import inverse_index, file_prefix
 from os.path import join
 from sys import argv
 

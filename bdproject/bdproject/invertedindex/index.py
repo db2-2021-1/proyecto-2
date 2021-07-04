@@ -157,7 +157,7 @@ class inverse_index(object):
         v_n: float) -> float:
 
         return (sum([
-            weigth*V[word] for word, weigth in Q.items()
+            weigth*(V[word] if word in V else 0) for word, weigth in Q.items()
         ]))/(q_n*v_n)
 
     def df(self, word: str) -> int:
@@ -184,6 +184,8 @@ class inverse_index(object):
                 for id, f in pairs.items():
                     tf.setdefault(id, {})[word] = f
 
+        #print(union)
+
         # Dict[word, tf_idf]
         q_tf_idf: Dict[str, float] = {
             w: log10(1.0+f)*self.idf(w) for w, f in q.items() if w in union
@@ -197,6 +199,8 @@ class inverse_index(object):
                 w: log10(1.0+f)*self.idf(w) for w, f in fs.items()
             } for d, fs in tf.items()
         }
+
+        print(set([w for d,v in tf_idf.items() for w in v]))
 
         # Dict[document, cos]
         cos_ranked: Dict[str, float] = {
