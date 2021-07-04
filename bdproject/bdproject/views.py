@@ -8,6 +8,8 @@ from pathlib import Path
 import json
 from django.http import JsonResponse, StreamingHttpResponse
 
+
+from os.path import join
 index = inverse_index()
 if not os.path.isfile("index"):
   index.from_json(glob.glob("../data_elecciones/*.json"))
@@ -23,10 +25,10 @@ def dashboard(request):
 
 @csrf_exempt
 def invertedindexquery(request):
-  #valor = request['input']
-  #received_json_data = json.loads(request.POST['query'])
-  retorno = ['1046566853970153472', '1046566883145797633', '1046567317847646208', '1046567761265262594', '1046568327458566144']
-  
-  print(json.dumps(retorno))
-
+  data = json.loads(request.body)
+  retorno = []
+  text = data['query']
+  for id in index.query(text):
+    retorno.append(id)
+  #print(retorno)
   return JsonResponse(json.dumps(retorno) , safe=False)
