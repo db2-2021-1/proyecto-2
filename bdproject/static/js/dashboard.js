@@ -16,12 +16,15 @@
           success: function(data){
             results = document.getElementById("results");
             results.innerHTML = "";
-            console.log('results', results)
-            console.log("data", data)
-            var xd = JSON.parse(data)
-              for (tweet of xd) {
+            //console.log('results', results)
+            //console.log("data", data)
+            var datos = JSON.parse(data)
+	        let i = 0  
+              for (tweet of datos) {
                 console.log(tweet);
-                twttr.widgets.createTweet(tweet, results, 
+   		    if(i == 3) break
+		      i++
+		      twttr.widgets.createTweet(tweet, results, 
                   {
                     conversation : 'none',
                     cards        : 'hidden',
