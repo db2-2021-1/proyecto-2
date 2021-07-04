@@ -1,5 +1,4 @@
-
-  function buscar() {
+    function buscar() {
     //var query = $("#query").val();
     //var makequery = JSON.stringify({
     //      "query":query
@@ -19,8 +18,16 @@
             results.innerHTML = "";
             console.log('results', results)
             console.log("data", data)
-              for (tweet of data) {
-                twttr.widgets.createTweet(tweet, results);
+            var xd = JSON.parse(data)
+              for (tweet of xd) {
+                console.log(tweet);
+                twttr.widgets.createTweet(tweet, results, 
+                  {
+                    conversation : 'none',
+                    cards        : 'hidden',
+                    linkColor    : '#cc0000',
+                    theme        : 'light'
+                  });
               }
           },   
           error: function(data){

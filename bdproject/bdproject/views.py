@@ -30,5 +30,5 @@ def invertedindexquery(request):
   text = data['query']
   for id in index.query(text):
     retorno.append(id)
-  #print(retorno)
+  print(retorno)
   return JsonResponse(json.dumps(retorno) , safe=False)
