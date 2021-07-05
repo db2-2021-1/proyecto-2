@@ -21,5 +21,6 @@ A partir del vector de palabras obtenido, el índice es actualizado con el nuevo
 y las frecuencias de sus palabras.
 
 ## Memoria secundaria
+El índice puede ser guardado en la memoria secundaría con `dump()` y cargado con `load()`.
 
 ## Ejecución de consultas
