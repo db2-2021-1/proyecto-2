@@ -1,4 +1,11 @@
-# Proyecto 2
+# Tweet Inverted Index
+Tweet Inverted Index is a project part of the course of Databases 2 at UTEC.
+This is a webpage that has a unique tool of searching Tweets based on a word or sentence that is provided by the user. In addition, the search engine uses an inverted index, internally.
+
+![image](https://user-images.githubusercontent.com/40151035/125705494-8b4cbd9a-ce72-400f-8ad9-40e72e0e4511.png)
+![image](https://user-images.githubusercontent.com/40151035/125705525-e2c8c54f-f929-4795-a1a7-8ed208fac34a.png)
+
+
 
 ## Dependencias
 
